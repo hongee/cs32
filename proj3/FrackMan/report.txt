@@ -1,0 +1,333 @@
+CS32
+=====
+### Project 3 Report
+
+##### Class Implementation
+```cpp
+class Actor : public GraphObject {
+    virtual void doSomething() = 0;
+    //The individual actor's action during the tick. This is pure virtual
+    //to enforce that each actor needs to do something minimally (even if it's nothing, to be decided by the subclass)
+    //and to make the Actor a abstract class type so I won't accidentally make copies of plain Actor
+
+    //The following functions returns certain properties of the object to determine their behavior in a given scenario
+    //Allows me to easily identify the correct subclasses in a list of generic actors
+    virtual bool isStaticObject() const;
+    //Returns if the item is non-human (ie anything but frackman/protestor)
+    //This by default returns true, since most actors are static
+    //Also because I'm lazy
+
+    virtual bool isUnpassable() const;
+    //Returns true if this blocks a path, or can't be stacked upon
+    //Returns false by default, since only boulders are fully unpassable
+    //Other class override this as needed
+
+    virtual bool canBePickedUpByPlayer() const;
+    //Returns true if it can be picked up by player.
+    //Virtual for each individual actor to override, default false
+    //Also aids in identifying pickupable items
+
+    virtual bool canBePickedUpByProtestor() const;
+    //Returns true if it can be picked up by protestor, default false
+    //Virtual for each individual actor to override
+
+    virtual void pickedUpGold();
+    //Handles the action where the actor encounters a gold
+    //Does nothing by default, since most classes wont ever pick up gold
+
+    //Plain Accessors that return specifed value
+    bool isDead() const;
+    int  getHealth() const;
+    //full virtual since theres no reasonable default generic type, each class needs to define this
+    //not actually used often
+    virtual int getType() const = 0;
+    StudentWorld* getWorld() const;
+
+    //mutators
+    //setDead makes the object invisible, and marks it for deletion
+    bool setDead();
+    bool incrHealthBy(const int n);
+    //by default decrHealthBy will decrement the health variable by the required no.
+    //but certain classes may have special considerations/handlers for when hp goes to 0
+    //hence virtual for overriding
+    virtual bool decrHealthBy(const int n);
+};
+
+// Frackman!
+class Frackman : public Actor {
+public:
+    //basically handles player input, (moves, change direction, fire squirt, drop gold etc)
+    virtual void doSomething();
+
+    //Frackman is not static
+    virtual bool isStaticObject() const;
+
+    //Simple accessors
+    int getWater() const;
+    int getSonar() const;
+    int getGold() const;
+    int getHealthAsPct() const;
+    virtual int getType() const;
+
+    //Increases the described property by 1
+    void increaseGold();
+    void increaseSonar();
+    void increaseWater();
+    //Frackman needs to kill itself and do other stuff when its hp falls below 0
+    //Hence need to override base class decrHealth
+    virtual bool decrHealthBy(const int n);
+};
+
+// Dirt
+class Dirt : public Actor {
+public:
+    //This returns type dirt
+    virtual int getType() const;
+    //This does nothing
+    virtual void doSomething();
+};
+
+// Boulder
+class Boulder : public Actor {
+public:
+    //Returns proper type
+    virtual int getType() const;
+
+    //Performs action as prescribed in spec
+    //ie wait until can fall, pause for set time, begin falling
+    //kill itself it hits ground after falling
+    virtual void doSomething();
+
+    //can't pass a boulder yo
+    virtual bool isUnpassable() const;
+};
+
+// Squirt
+class Squirt : public Actor {
+public:
+    //is a squirt
+    virtual int getType() const;
+    //attempts to keep moving until it hits some actor or unpassable object
+    virtual void doSomething();
+    //squirts can overlap
+    virtual bool isUnpassable() const;
+};
+
+// Pick Uppable
+class Pickups : public Actor {
+public:
+    //A pickup's pickup-able status is determined by its state.
+    //This returns that state variable
+    //All pickups are one of the possible states
+    virtual bool canBePickedUpByPlayer() const;
+    virtual bool canBePickedUpByProtestor() const;
+    //Pickups also have a possible temporary state. This returns that state variable.
+    bool isTemporary() const;
+
+    //IDEALLY I would have written this with a general doSomething function for the Pickups
+    //and have each subclass write specific handlers for each state they're in, and what they need to do
+    //but the code for each doSomething is really short anyway and I'm out of time to debug
+    //Hence essentially each subsequent subclass simply implements the states they are concerned about
+};
+
+// Protestor
+class GenericProtestor : public Actor {
+public:
+
+    //All Protestors are a generic protestor, since the only difference between them is how they handle
+    //gold picks ups, their HP, their image, and if they do pathfinding to the player
+    //Hence the doSomething class essentially handles all aspect of the protestors movement, as set by the spec
+    //while offering an opportunity for the protestor to path find to the Frackman (or not).
+    virtual void doSomething();
+
+    //All protestor have a leaving state
+    bool isLeaving() const;
+
+    //Type is still full virtual, since Generic Protestor has no real type
+    virtual int getType() const = 0;
+
+    //Pathfind is full virtual, up to the individual subclass to decide if/how they want to do pathfinding to player
+    //and to make sure I don't forget to implement this.
+    virtual bool doPathfinding() = 0;
+
+    //Protestors need to start leaving when their HP falls to 0.
+    virtual bool decrHealthBy(const int n);
+
+    //Protestors are all not static
+    virtual bool isStaticObject() const;
+
+    //Makes the protestor leave
+    void setLeaving();
+
+    //Sets the waiting tick count.
+    void setTicksToNextMove(int n);
+};
+
+// Regular Protestor
+class RegularProtestor : public GenericProtestor {
+public:
+    //is type regular protestor
+    virtual int getType() const;
+
+    //this returns false (ie no pathfinding is done)
+    virtual bool doPathfinding();
+
+    //this sets the protestor to leave
+    virtual void pickedUpGold();
+};
+
+// Hardcore Protestor
+class HardcoreProtestor : public GenericProtestor {
+public:
+    //is type hardcore protestor
+    virtual int getType() const;
+
+    //this returns true if the protestor is moved as a result of pathfinding to the frackman
+    //false if nothing is done
+    virtual bool doPathfinding();
+
+    //this sets the protestor to wait for an extended period of time
+    virtual void pickedUpGold();
+};
+
+class StudentWorld : public GameWorld
+{
+public:
+  //the 3 functions that do what the spec describes
+	virtual int init();
+	virtual int move();
+	virtual void cleanUp();
+
+  //this overloaded functions remove dirt from either just one position,
+  //or from a range of positions, range inclusive
+	bool removeDirt(const int x, const int y);
+	bool removeDirt(const int sx, const int sy, const int ex, const int ey);
+
+  //checks if there's currently alive dirt in the prescribed range, inclusive
+	bool isDirtAt(const int sx, const int sy, const int ex, const int ey) const;
+
+  //checks if there's any blocking actors (i.e. boulders) in a small range around a specific position,
+  //and the overloaded version accepts an additional pointer to exclude that from the checking
+  //i.e. this helps to prevent it from identifying itself in the position
+	bool hasBlockingActorAt(const int x, const int y) const;
+  bool hasBlockingActorAt(const int x, const int y, const Actor* a) const;
+
+  //this does a specified damage to actors in range of a specific coordinate, and
+  //can further determine if this affects the Frackman, and what causes the damage
+	bool causeDamageToActorsAt(const int x, const int y, int damage, bool hitsPlayer, int damageCausingType);
+
+  //determines if a specified location is walkable, given an orientation and a coordinate of the FINAL position
+  //(convoluted, i know, i regret my own design decisions but no time to refactor)
+  bool isAccessible(int x, int y, Actor::Direction dir) const;
+
+  //adds an actor into the list of actors
+  bool addActor(Actor* a);
+
+  //checks if the player is within a specified perimeter of the specified actor
+	bool playerNearMe(Actor* me, int limit) const;
+
+  //checks if two actors are within a specified perimeter of each other
+	bool protestorNearMe(Actor* me, Actor* &other,int limit) const;
+
+  //sets all actors in a circle, center x, y and radius limit to visible
+	void revealActorsAt(int x, int y, int limit);
+
+  //this returns the next position and orientation for an actor from the pathfinding heatmap
+  //directed towards either the player or the exit
+	void moveTowardsPlayer(Actor* a, int& nx, int &ny, Actor::Direction &dir);
+	void moveTowardsExit(Actor* a, int& nx, int &ny, Actor::Direction &dir);
+
+  //counts the number of steps it takes to reach the player from a specified position
+	int stepsToPlayer(int x, int y) const;
+
+  //helper function that determines if, at the specified position, the player is within a direct path of sight
+	bool isPlayerWithinSight(int x, int y, Actor::Direction &dir) const;
+
+  //returns a pointer to frackman
+	Frackman* getFrackman();
+};
+
+```
+
+##### Bugs/Incomplete
+1. This happened once, unable to replicate/fix/figure where exactly I went off the check by 1, but the randomly distributed water
+went 1 square too low into the dirt
+
+##### Design Decisions/Assumptions
+1. numSquaresToMoveInCurrentDirection is not well defined, and I set it to a random integer in the valid range.
+2. Ideally I would have written the pickups class with a general doSomething function
+   and have each subclass write specific handlers for each state they're in, and what they need to do
+   but the code for each doSomething is really short anyway and I'm out of time to debug
+3. I made a GenericProtestor instead of having a HardcoreProtestor inherit from a Protestor, as this allows the user of the class
+   to call the Regular Protestor constructor without having to pass extra parameters (such as IID etc) which are not his concern.
+4. As much as possible, I tried to separate the concerns of Actors and the StudentWorld. The actor, to the best of its ability,
+   should not be required to reason the state of the current field, and the StudentWorld should handle all interactions between Actors
+   that is relating to their relative in game states as much as possible.
+
+##### Testing
+1. Frackman
+  - Frackman was primarily tested by playing the game. The player would print to cerr when any significant events
+    occur (when it dies, when its hp drops, when sonars, waters were expended, and when picks up were found) allowing me
+    to ensure the states are properly updated and accounted for. I would also move the Frackman to all corners and edges
+    of the map to ensure it doesn't move out of bounds, and move it into every side of the border to ensure it doesn't stack.
+    Boulders were also allowed to drop on the Frackman, and protestors were allowed to shout to ensure the Frackman handles
+    its hp and subsequent death properly. Dirt was also visually ensured to be properly removed, and by having the game update
+    cerr with the coordinates when a new object is randomly generated and placed, it was possible to test the Sonar by having it
+    reveal the known items in the specified radii.
+
+2. Dirt
+  - The primary purpose of Dirt is to set itself Dead at the right coordinates when necessary, and have each point correctly
+    block the movement of the actors. This was handled and accounted for as a 2D array of the Dirt object, with the indexes corresponding
+    to the actual x,y position on the grid to allow for logical access.
+
+3. Boulder
+  - The distribution and blocking ability of the boulder was primarily handled by the StudentWorld class. However, the boulder needed to maintain
+    the 3 different states it is in, and perform the proper, necessary actions. The static state is tested by observation from its ability to
+    block and stay in place, the waiting state is similarly tested through observation (ie not dropping) and cerrs to the terminals, and the Falling
+    state and its proper handling of its death is tested by having it drop on the Frackman, drop on another boulder, drop on permutations of dirt
+    beneath it, and hardcoded protestors placed on its path.
+
+4. Squirt
+  - The Squirt object is tested by shooting the squirt against multiple surfaces and having it cerr to the console when a significant action
+    (when it hits a dead end, dies by running out of movements, when it hits a protestor) has occurred and ensuring the behavior is defined.
+
+5. Pickups
+  - In general, the pick ups were tested by ensuring each perform the requisite actions and update the relevant properties (score etc.) when they are picked up.
+    The counters are displayed so ensuring the counts were properly updated was straightforward. After it was ensured that player could pick up
+    the items, they were similarly hardcoded to be placed before the protestors to ensure that they are not interacted with in the default states.
+
+6. Oil
+  - When Oil is picked up the counter needs to decrement, and if the counter falls to 0 the level should conclude.
+
+7. Sonar
+  - When a Sonar is picked up the sonar counter should be incremented.
+
+8. Water
+  - When water is picked up it should increment the Water count by 5.
+
+9. Generic Protestor (Regular Protestor)
+  - The Protestor is required to perform specific activities at differing states. The most straightforward way to ensure this is to flood cerr with
+    information regarding each activity (each turn, each movement) and pausing execution of the game when erratic events occur at various points and
+    examining the output. If that fails then I would place breakpoints at the offending blocks of code and recreating the scenario. Most errors involve
+    faulty bounds checking and/or a failure to return when required and with sufficient breakpoints it was easy to examine the state of the protestor and
+    catch these as necessary. The path finding algorithm is primarily handled by the world class, but by setting the protestors to only having 1 health
+    and removing the cap on protestors generated it was possible to test the accuracy of the algorithm with ease even with complex maze setups. The final
+    method was pure observation through setting a high cap of protestors and observing the movements for a sufficient amount of time to ensure and catch
+    any odd/erratic movements or unexpected behavior. Similarly gold was dropped and the reaction was observed, and the same test was duplicated for
+    them in multiple states. Paths were also dug along boulders, and the protestors should be able to be blocked, and turn the proper direction when
+    required in junctions.
+
+10. Hardcore Protestor
+  - The hardcore protestor behaves the same as the generic protestor for the most part. The additional path finding algorithm is exactly the same as
+    one utilized to get the protestor back to the start after it is set to leaving, and simply finds a different end point. While building the
+    pathfinding algorithm it similar floods the console with as much information as possible, and breakpoints are then placed within each iteration
+    to ensure that it is behaving as expected, and data is appropriately updated.
+
+11. StudentWorld
+  - The StudentWorld is a complex class to test since most of its functions are very much linked with the functions of the actors, and the functionality
+    of the actors similar depend on the behavior of the world. Similar to previous examples however, I primarily employed breakpoints and console output
+    to check on the states of the game world. The utility/helper functions could be easily handled with a few straightforward test cases, and for the
+    complex ones such as the pathfinder/isAccessible/objectDistribution etc, a very strong indicator of its correctness will be the accuracy and the
+    regularity of the behavior of the actors on the actual game. When necessary, breakpoints could be placed in between ticks to ensure all variables are
+    in the correct state and well updated. Checks are also put within complex algorithms to print to cerr information when unexpected scenarios are encounted
+    such as incorrect arguments, or missing data etc.

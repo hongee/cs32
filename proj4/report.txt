@@ -1,0 +1,140 @@
+CS32
+=====
+### Project 4 Report
+
+##### Bugs/Incomplete
+1. None so far
+
+##### Algorithms/Data Structures & Time Complexity
+1. `DiskMultiMap`
+  - The DiskMultiMap is designed as a open hash map, with each hash's contents stored as a singly linked list, while maintaining a singly
+    linked list of removed nodes for overwriting.
+  - `Iterator`
+    - The iterator, when default constructed, is put into an invalid state, pointing at `NULL` locations. It is only valid when
+      initialized with a given offset value and a pointer to a DiskMap.
+    - `operator++`
+      - Moves the iterator to the next item referenced by the key.
+      - This runs in O(N/B) time or ~O(1) given a sufficiently large number of buckets (low hash collisions)
+      ```
+      read currentTuple from disk
+      read currentTuple.next as nextTuple
+      while nextTuple != currentTuple.key && nextTuple != null:
+        nextTuple = *nextTuple.next
+      points self to nextTuple
+      ```
+    - `operator*`
+      - Reads from disk the current offset and returns that as a MultiMapTuple.
+      - This runs in O(1)
+    - `isValid`
+      - Returns true only if iterator is not currently pointing to NULL, and contains a reference to a DiskMultiMap.
+  - `createNew`
+    - Creates a new BinaryFile and formats it as a hash map, writing a header storing a pointer to the last freed position for overwriting
+      and the total number of buckets of the hash map. The buckets are then all initialized to point to NULL (empty).
+    - This runs in O(B), since time is linear with respect to the number of buckets being written to file
+  - `openExisting`
+    - This attempts to open existing BinaryFiles.
+    - This runs in O(1)
+  - `insert`
+    - Inserts a new entry to the hash table.
+    - Locating the bucket takes O(N/B) time or ~O(1), and since I'm inserting to the front of the linked list, inserting
+      the interaction only takes O(1) time.
+    ```
+    hash key
+    locate bucket using hash
+    write tuple to either a freed position or the end of the binaryFile
+    if wrote to freed position:
+      set lastRemoved to point to the next freed position
+    set head of the bucket to the offset of the written tuple
+    ```
+  - `search`
+    - Returns the hash table iterator for the specified key
+    - This runs in O(N/B) ~O(1) in the absence of significant hash collisions
+      ```
+      hash key
+      locate bucket using hash
+      read first tuple of basket from disk
+      while tuple.key != key:
+        tuple = tuple->next
+      return iterator pointing to tuple
+      ```
+  - `erase`
+    - Removes an entry from the MultiMap
+    - This takes O(N/B) to locate the bucket and the first node with the right key, and O(K) time to perform a linear
+      search to locate the item given K existing associations
+      ```
+      hash key
+      locate bucket using hash
+      read first tuple of basket from disk
+      while tuple != null:
+       if tuple matches provided parameters:
+        if tuple is at bucket head:
+          set bucket head to tuple.next
+        else:
+          previousTuple.next = tuple.next
+        tuple.next = lastRemoved
+        lastRemoved = offset of tuple
+        tuple = previous->next
+       else:
+        previousTuple = tuple
+        tuple = tuple->next
+      ```
+  - `hashKey`
+    - This simply uses the C++ hash function, mapped to the number of buckets
+
+2. `IntelWeb`
+  - This class maintains 2 disk based associative hash maps, one mapping `from` to `to` and the other from `to` to `from`. This allows
+    for quick bi-directional lookup for every vertex in the graph.
+  - `createNew`
+    - This creates the 2 new DiskMultiMaps, both with bucket sizes = expectedItems/LOAD_FACTOR
+    - The time complexity is the same function as DiskMultiMap's `createNew`, O(numberOfBuckets)
+  - `openExisting`
+    - This attempts to open already created DiskMultiMaps
+    - The time complexity is O(1)
+  - `ingest`
+    - This reads lines off the given input file, and inserts the interaction represented by each line into both DiskMultiMaps
+    - This is linear with respect to number of lines of the input file, since each needs to be added to the MultiMaps. O(N)
+  - `crawl`
+    - This does a breadth-first traversal of the interactions graph, blacklisting and examining the node's outbound vertices followed
+      by its inbound vertices.
+    - The disk reads will be O(T), since minimally every vertex (which will only be visited once) will need to read from disk every edge
+      pointing in and out, and if there are T of these edges, the time complexity will be linear to T. Each tainted interaction/malicious item
+      is stored in a set (binary search tree), and T insertions will be O(TlogT). The use of the other data structures do not affect the big O for
+      this algorithm.
+      ```
+      for every indicator:
+        mark as visited
+        if prevalence(indicator) > min:
+          continue
+        else if (prevalence count == 0):
+          continue
+        else:
+          add to badItems set
+          push to queue
+
+      while queue is not empty:
+        pop key from queue
+        both inbound and outbound:
+          get listOfInteractions of key from either disk or cache
+          for every interaction in listOfInteractions:
+            inserts interactions into interactionSet
+            if prevalence(connected vertex) > min or key has been visited:
+              continue
+            push key to badItems set
+            mark key as visited
+            push key onto queue
+      ```
+   - `prevalence`
+     - This function calculates the occurrence of an item by reading its bidirectional interactions from disk and counting them, and in
+       the process caches the disk reads and the counts for each object.
+   - `purge`
+     - This removes the designated vertex from the graph.
+     - This runs in O(M) time where M is the number of edges where the vertex is a participant.
+     ```
+     both inbound and outbound:
+      for every interaction on disk:
+        add interaction to list
+      for every interaction in the list:
+        erase currentVertex to destinationVertex
+        erase destinationVertex to currentVertex
+        (from their respective maps)
+     ```

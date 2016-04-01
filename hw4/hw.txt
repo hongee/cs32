@@ -1,0 +1,32 @@
+CS32
+=====
+### Homework 4
+
+2.
+`insert` is implemented by calling an implementation of the `doInsertOrUpdate` function.
+`doInsertOrUpdate` first performs a `find(key)` on the `Map` to determine if a duplicate
+with the same key exists. As `find`'s implementation involves a check `p->m_key != key`
+check, and since the `Coord` class does not define the `!=` operator, the program has
+no way to determine how to perform such a test for inequality.
+
+3.b.
+There would be no way to print out the one to many relationship as required since every
+round of the recursion would not know the state of the previous round which called it, and
+the previous round will not be able to know what/how much to print to cout while still sticking
+to a proper recursive function.
+
+4.a.
+`O(N^3)`. Every run of the algorithm requires it to access every element in the N*N array, and then
+for each element it runs another 2N checks against items in its row and column. This adds to
+a big O of N^3.
+
+4.b.
+`O(N^3)`. The loop accessing the 2D array now becomes a summation of operation - 1 + 2 + 3 +...+ N-1
+The summation formula gives us (N-1)(N)/2 operations, multiplied by the same 2N number of checks for each
+element. This, in Big O terms, still gives us a N^3 time complexity.
+
+5.
+`O(N^2)`. There're N elements in the smaller map, and each call to `get` will typically require a full traversal
+of the map, so N*(N + N). Insertion and deletion of linked list nodes are constants, so N(N+N+c), and the
+swap function similarly takes constant time and the eventual deletion takes N time - N(N+N+c) +c + N.
+Hence in BigO terms the algorithm's complexity is O(N^2);

@@ -1,0 +1,46 @@
+CS32
+=====
+### Homework 2
+
+2.
+```
+r/c
+1: 6 | 4
+2: 6 | 3
+3: 6 | 5
+4: 7 | 5
+5: 8 | 5
+6: 8 | 6
+7: 8 | 7
+8: 8 | 8
+9: 7 | 8
+10: 6 | 6
+11: 5 | 4
+12: 4 | 4
+```
+
+4.1
+```
+r/c
+1: 6 | 4
+2: 5 | 4
+3: 6 | 5
+4: 6 | 3
+5: 4 | 4
+6: 6 | 6
+7: 7 | 5
+8: 3 | 4
+9: 4 | 5
+10: 8 | 5
+11: 2 | 4
+12: 4 | 6
+```
+
+4.2
+The first algorithm performs a depth first search using the stack's last in first out principle,
+i.e. it follows a chosen path down one direction all the way until it hits a dead end,
+before returning to the last visited fork and going down that path. The second performs a breadth
+first search using the queue, checking every path in each unit depth (i.e. flooding the field in concentric
+circles), accomplishing this using the first in first out design of a queue, since coord nodes
+are added in the order in which they are added.
+

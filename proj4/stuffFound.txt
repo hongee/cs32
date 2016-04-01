@@ -1,0 +1,36 @@
+chrome.exe
+diim.exe
+http://ebay.com/ctd/riq/du/
+http://groupon.com/h/omm/jcbn/
+http://t.co/js/sqv/
+http://thepiratebay.am/i/c/mtd/
+nym.exe
+oihq.exe
+pbrd.exe
+pfg.exe
+pxj.exe
+qiwr.exe
+rnv.exe
+tosh.exe
+
+m14 chrome.exe rnv.exe
+m14 rnv.exe diim.exe
+m14 rnv.exe http://ebay.com/ctd/riq/du/
+m14 rnv.exe http://groupon.com/h/omm/jcbn/
+m14 rnv.exe o.exe
+m3 chrome.exe pbrd.exe
+m3 oihq.exe http://t.co/js/sqv/
+m3 pbrd.exe ik.exe
+m3 pbrd.exe qiwr.exe
+m3 qiwr.exe oihq.exe
+m31 chrome.exe pxj.exe
+m32 chrome.exe tosh.exe
+m32 tosh.exe g.exe
+m32 tosh.exe s.exe
+m43 chrome.exe f.exe
+m43 chrome.exe wd.exe
+m5 chrome.exe nym.exe
+m5 nym.exe http://thepiratebay.am/i/c/mtd/
+m5 nym.exe pfg.exe
+m8 chrome.exe y.exe
+m9 chrome.exe http://google.com

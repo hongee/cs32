@@ -1,0 +1,198 @@
+CS32
+=====
+### Project 2 Report
+
+##### Linked List Implementation
+My implementation of Map is a linear doubly linked list which maintains a head and a tail pointer.
+The previous of the first node and the next of the last node are nullptrs.
+
+```
+  |    MAP       |    ->  |   Node 1   |   ->  |  Node 2   |
+  |  Node* head  |  --|   |   next     | --|   |   next    | <-
+  |  Node* tail  |        |  previous  |     - |  previous |   |
+        |                       ^            |                 |
+        |                       |------------                  |
+        |                                                      |
+        --------------------------------------------------------                                                      
+```
+
+##### Algorithm Descriptions
+
+a. Iterations
+```
+Set temp Node pointer
+Set temp to head
+While temp is not nullptr
+  (Do Something)
+  set temp to its next ptr
+
+```
+
+b. Delete All Nodes / Map Destructor
+```
+Iterate through Nodes
+  Delete node's previous
+  If current node's next is a nullptr, we are on the last node
+    Delete current node
+    Break Iteration
+
+```
+
+c. Copy constructor
+```
+Initialize new map's size to 0, head and tail to nullptrs
+Iterate through source map
+  insert key & value of each node to new map
+```
+
+d. Assignment Operator
+```
+Check if current and source are alias, return current if so.
+
+Delete every node of current map.
+
+Initialize current map's size to 0, head and tail to nullptrs
+Iterate through source map
+  insert key & value of each node to new map
+```
+
+e. Erase
+```
+Retrieve pointer to Node.
+
+If previous Node is null, we are at the head:
+  Set head to the next node
+Else:
+  Set previous node's next to the next node
+
+If next Node is null, we are at the tail:
+  Set tail to the previous node
+Else:
+  Set next node's previous to the previous node
+
+Delete node
+Decrement size
+```
+
+f. Insert
+```
+Create a new node.
+
+If tail is nullptr, implies the list is empty:
+  set head to the new node
+  set tail to the new node
+Else:
+  set tail node's next to new node
+  set new node's previous to the tail
+  set tail to be the new node
+
+Increment size.
+```
+
+g. Combine
+```
+If the result is alias of m1
+  set m2 to be the source, and m1 (aka result) as the destination
+Else
+  set the source to be m1
+  assign m2 to result, aka use m2 as the destination
+
+Iterate through source
+  If current Node key exists in the destination:
+    If the keys' values differ:
+      Erase key from destination.
+      Flag merge conflict
+  Else:
+    Insert key and value into destination.
+```
+
+
+h. Subtract
+```
+Create a duplicate of m1 to prevent aliasing issues.
+
+Iterate through m2:
+  Erase the Node's keys from temp
+
+Assign temp to result.
+```
+
+
+##### Test Cases
+```cpp
+//Basic Checks from HW1
+cerr << "Running tests!" << endl;
+Map m;  // maps strings to doubles
+assert(m.empty()); //ensure m is empty
+ValueType v = -1234.5;
+assert( !m.get("abc", v)  &&  v == -1234.5); // v unchanged by get failure
+m.insert("xyz", 9876.5);
+assert(m.size() == 1);
+KeyType k = "hello";
+assert(m.get(0, k, v)  &&  k == "xyz"  &&  v == 9876.5); //get with index works
+assert(m.get(k,v) && k == "xyz" &&  v == 9876.5); //get without index works
+
+Map j;
+j.insert("dsdasd", 123123123);
+j.insert("pikachu", 213);
+j.insertOrUpdate("pika", 123);
+assert(j.size() == 3); //insertsOrUpdate inserts instead of updating
+j.update("pikachu" ,999);
+assert(j.get("pikachu",v) && v == 999); //updates correctly
+
+cerr << "Swapping Next 2 Dumps" << endl;
+m.dump();
+j.dump();
+m.swap(j);
+cerr << endl << "Result" << endl;
+m.dump();
+j.dump();
+assert(j.get("xyz",v) && v == 9876.5); //swap works
+j.swap(m);
+
+j.erase("pikachu");
+assert(j.size() == 2 && !(j.get("pikachu", v)) && v == 9876.5); // size drops by 1, pikachu no longer found after erasing
+
+cerr << endl << "COMBINING" << endl;
+Map d;
+
+m.insertOrUpdate("pika", 321);
+m.dump();
+j.dump();
+
+assert(!combine(m, j, d) && !d.contains("pika")); //diff duplicates combine
+d.dump();
+
+m.insertOrUpdate("pika", 123);
+assert(combine(m, j, d) && d.contains("pika")); //same duplicates combine
+d.dump();
+
+j.insert("chu", 102);
+assert(combine(d, j, d) && d.contains("chu")); //m1 is an alias of result
+d.dump();
+
+m.insert("charmander", 123);
+assert(combine(m, d, d) && d.contains("charmander")); //m2 is an alias of result
+cout << endl << "---" << endl;
+d.dump();
+m.dump();
+
+Map r;
+subtract(d, m, r);
+assert(!r.contains("pika")); //subtract works
+r.dump();
+
+subtract(r,r,r);
+assert(r.size()==0); //removing from itself
+r.dump();
+
+
+m = j;
+assert(m.contains("pika")); //m now takes values of j;
+Map* m_p = new Map(m);
+assert(m_p->contains("pika")); //copy constructor works
+Map* c = new Map();
+*c = *m_p;
+delete m_p; //doesn't raise a segfault - destructor *should* work
+assert(c->contains("pika")); //assignment operator's deep copy works
+```

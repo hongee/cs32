@@ -1,0 +1,87 @@
+#include "Map.h"
+#include <iostream>
+#include <cassert>
+
+using namespace std;
+
+int main() {
+
+  //Basic Checks from HW1
+  cerr << "Running tests!" << endl;
+  Map m;  // maps strings to doubles
+  assert(m.empty());
+  ValueType v = -1234.5;
+  assert( !m.get("abc", v)  &&  v == -1234.5); // v unchanged by get failure
+  m.insert("xyz", 9876.5);
+  assert(m.size() == 1);
+  KeyType k = "hello";
+  assert(m.get(0, k, v)  &&  k == "xyz"  &&  v == 9876.5); //get with index works
+
+  Map j;
+  j.insert("dsdasd", 123123123);
+  j.insert("pikachu", 213);
+  j.insertOrUpdate("pika", 123);
+  assert(j.size() == 3); //inserts instead of updating
+  j.update("pikachu" ,999);
+  assert(j.get("pikachu",v) && v == 999); //updates correctly
+
+  cerr << "Swapping Next 2 Dumps" << endl;
+  m.dump();
+  j.dump();
+  m.swap(j);
+  cerr << endl << "Result" << endl;
+  m.dump();
+  j.dump();
+  assert(j.get("xyz",v) && v == 9876.5); //swap works
+  j.swap(m);
+
+  j.erase("pikachu");
+  assert(j.size() == 2 && !(j.get("pikachu", v)) && v == 9876.5); // size drops by 1, pikachu no longer found
+
+  cerr << endl << "COMBINING" << endl;
+  Map d;
+
+  m.insertOrUpdate("pika", 321);
+  m.dump();
+  j.dump();
+
+  assert(!combine(m, j, d) && !d.contains("pika")); //diff duplicates
+  d.dump();
+
+  m.insertOrUpdate("pika", 123);
+  assert(combine(m, j, d) && d.contains("pika")); //same duplicates
+  d.dump();
+
+  j.insert("chu", 102);
+  assert(combine(d, j, d) && d.contains("chu")); //m1 alias result
+  d.dump();
+
+  m.insert("charmander", 123);
+  assert(combine(m, d, d) && d.contains("charmander")); //m2 alias result
+  cout << endl << "---" << endl;
+  d.dump();
+  m.dump();
+
+  Map r;
+  subtract(d, m, r);
+  assert(!r.contains("pika"));
+  r.dump();
+
+  subtract(r,r,r);
+  assert(r.size()==0);
+  r.dump();
+
+
+  m = j;
+  assert(m.contains("pika")); //m now takes values of j;
+  Map* m_p = new Map(m);
+  assert(m_p->contains("pika")); //copy constructor works
+  Map* c = new Map();
+  *c = *m_p;
+  delete m_p;
+  assert(c->contains("pika")); //assignment operator's deep copy works
+
+
+  cout << "Passed all tests" << endl;
+
+}

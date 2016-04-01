@@ -1,0 +1,6 @@
+DerivedData/
+*.zip
+*.gch
+*.dat
+*.out
+*.xcode*
